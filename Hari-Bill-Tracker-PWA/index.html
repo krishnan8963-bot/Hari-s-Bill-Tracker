@@ -1,0 +1,1185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Hari's Bill Tracker</title>
+
+<!-- PWA: Web App Manifest -->
+<link rel="manifest" href="manifest.json">
+
+<!-- PWA: theme / background colors (address bar + splash screen) -->
+<meta name="theme-color" content="#0A0E17">
+<meta name="background-color" content="#0A0E17">
+
+<!-- PWA: icons -->
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icons/icon-512.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+
+<!-- PWA: standalone / mobile app behaviour -->
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Bill Tracker">
+<style>
+  :root{
+    --bg: #0A0E17;
+    --bg-elevated: #0F1420;
+    --surface: #141B2B;
+    --surface-2: #1B2438;
+    --surface-hover: #202C46;
+    --border: #232D46;
+    --border-soft: #1A2338;
+    --text: #EDEFF6;
+    --text-dim: #8A93AD;
+    --text-faint: #566085;
+    --gold: #D4AF6A;
+    --gold-soft: #E8CB93;
+    --gold-dim: #8A7247;
+    --green: #34D399;
+    --green-soft: rgba(52,211,153,0.14);
+    --red: #FB7268;
+    --red-soft: rgba(251,114,104,0.14);
+    --amber: #F5B94D;
+    --amber-soft: rgba(245,185,77,0.14);
+    --blue: #6C93F5;
+    --blue-soft: rgba(108,147,245,0.14);
+    --radius-lg: 20px;
+    --radius-md: 14px;
+    --radius-sm: 10px;
+    --font-display: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Times New Roman', serif;
+    --font-body: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    --shadow-card: 0 8px 24px -8px rgba(0,0,0,0.55);
+    --shadow-soft: 0 2px 10px -2px rgba(0,0,0,0.4);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background: radial-gradient(120% 90% at 50% -10%, #101830 0%, var(--bg) 45%, #060911 100%);
+    color: var(--text);
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+    overscroll-behavior-y: none;
+  }
+  button, input, select{ font-family: inherit; }
+  ::selection{ background: var(--gold-dim); color: #fff; }
+  a{ color: inherit; }
+
+  #app{
+    max-width: 560px;
+    margin: 0 auto;
+    min-height: 100vh;
+    position: relative;
+    padding-bottom: calc(84px + var(--safe-bottom));
+  }
+
+  /* HEADER */
+  .topbar{
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    background: linear-gradient(180deg, rgba(10,14,23,0.97) 0%, rgba(10,14,23,0.92) 70%, rgba(10,14,23,0));
+    backdrop-filter: blur(10px);
+    padding: 22px 20px 14px;
+  }
+  .brand{
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  .brand-title{
+    font-family: var(--font-display);
+    font-size: 22px;
+    letter-spacing: 0.2px;
+    display:flex; align-items:center; gap:10px;
+  }
+  .brand-title .mark{
+    width: 34px; height:34px; border-radius:10px;
+    background: linear-gradient(145deg, var(--gold-soft), var(--gold-dim));
+    display:flex;align-items:center;justify-content:center;
+    color:#171106; font-weight:700; font-family: var(--font-display); font-size:16px;
+    box-shadow: 0 4px 14px -4px rgba(212,175,106,0.55);
+  }
+  .brand-sub{ color: var(--text-dim); font-size: 12.5px; margin-top:2px; letter-spacing:0.3px;}
+  .view-title{
+    font-family: var(--font-display);
+    font-size: 26px;
+    margin: 2px 0 0;
+    letter-spacing: 0.2px;
+  }
+  .view-caption{ color:var(--text-dim); font-size:13px; margin-top:4px; }
+
+  main{ padding: 4px 20px 10px; }
+
+  /* CARD */
+  .card{
+    background: linear-gradient(165deg, var(--surface) 0%, var(--surface) 60%, var(--bg-elevated) 140%);
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-card);
+  }
+
+  /* DASHBOARD */
+  .hero-card{
+    padding: 24px 22px;
+    margin-top: 6px;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero-card::before{
+    content:"";
+    position:absolute; top:-60px; right:-60px; width:180px; height:180px;
+    background: radial-gradient(circle, rgba(212,175,106,0.16), transparent 70%);
+  }
+  .hero-top{ display:flex; align-items:center; justify-content:space-between; gap: 16px;}
+  .hero-label{ color: var(--text-dim); font-size: 12.5px; letter-spacing: 0.6px; text-transform: uppercase; }
+  .hero-month{ font-family: var(--font-display); font-size: 21px; margin-top:4px; }
+  .ring-wrap{ position:relative; width:96px; height:96px; flex:none; }
+  .ring-pct{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    flex-direction:column;
+  }
+  .ring-pct b{ font-family: var(--font-display); font-size:22px; }
+  .ring-pct span{ font-size:9.5px; color:var(--text-dim); letter-spacing:0.4px; text-transform:uppercase; margin-top:1px;}
+
+  .hero-stats{ display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px; margin-top:20px; }
+  .hstat{ background: rgba(255,255,255,0.03); border:1px solid var(--border-soft); border-radius: var(--radius-sm); padding:12px 10px; text-align:center; }
+  .hstat b{ display:block; font-family: var(--font-display); font-size:19px; }
+  .hstat span{ font-size:10.5px; color:var(--text-dim); letter-spacing:0.3px; text-transform:uppercase; }
+  .hstat.paid b{ color: var(--green); }
+  .hstat.pending b{ color: var(--red); }
+
+  .section-label{
+    display:flex; align-items:center; justify-content:space-between;
+    margin: 26px 2px 10px;
+  }
+  .section-label h3{
+    font-family: var(--font-display); font-weight:400; font-size:15.5px; margin:0;
+    color: var(--text); letter-spacing:0.2px;
+  }
+  .section-label small{ color:var(--text-faint); font-size:11.5px; letter-spacing:0.3px;}
+
+  .split-row{ display:grid; grid-template-columns: 1fr 1fr; gap:12px; }
+  .mini-card{ padding:16px; }
+  .mini-card .icon-badge{ width:32px;height:32px;border-radius:9px; display:flex;align-items:center;justify-content:center; margin-bottom:10px;}
+  .mini-card.invest .icon-badge{ background: var(--gold-dim); color:#1a1408;}
+  .mini-card.expense .icon-badge{ background: var(--blue-soft); color: var(--blue);}
+  .mini-card h4{ margin:0 0 2px; font-size:13px; font-weight:600; color:var(--text-dim); letter-spacing:0.2px; }
+  .mini-card .big{ font-family: var(--font-display); font-size:22px; }
+  .mini-card .rowline{ display:flex; justify-content:space-between; margin-top:8px; font-size:11.5px; color:var(--text-dim);}
+  .mini-card .rowline b{ color:var(--text); font-weight:600; }
+
+  .upcoming-card{ padding:16px 18px; display:flex; align-items:center; gap:14px; margin-top:12px; }
+  .upcoming-card .updot{ width:10px;height:10px;border-radius:50%; flex:none; }
+  .upcoming-card .upinfo{ flex:1; min-width:0; }
+  .upcoming-card .upname{ font-weight:600; font-size:14.5px; }
+  .upcoming-card .update{ font-size:12px; color:var(--text-dim); margin-top:2px;}
+  .upcoming-empty{ padding:22px 18px; text-align:center; color:var(--text-dim); font-size:13.5px; }
+
+  /* BADGES */
+  .status-pill{
+    display:inline-flex; align-items:center; gap:5px;
+    padding: 3px 9px; border-radius: 999px; font-size:10.5px; font-weight:700; letter-spacing:0.4px; text-transform:uppercase;
+    white-space:nowrap;
+  }
+  .status-pill.paid{ background:var(--green-soft); color:var(--green); }
+  .status-pill.pending{ background:var(--red-soft); color:var(--red); }
+  .status-pill.due-today{ background:var(--amber-soft); color:var(--amber); }
+  .status-pill.overdue{ background:var(--red-soft); color:var(--red); }
+  .status-pill.upcoming{ background:var(--blue-soft); color:var(--blue); }
+
+  /* NAV */
+  .navbar{
+    position:fixed; left:0; right:0; bottom:0; z-index:40;
+    display:flex; justify-content:center;
+    padding: 10px 14px calc(10px + var(--safe-bottom));
+    background: linear-gradient(0deg, rgba(6,9,15,0.98) 55%, rgba(6,9,15,0.7) 90%, transparent);
+  }
+  .navbar-inner{
+    width:100%; max-width: 528px;
+    background: rgba(20,27,43,0.92);
+    border: 1px solid var(--border);
+    backdrop-filter: blur(14px);
+    border-radius: 20px;
+    display:flex;
+    box-shadow: 0 10px 30px -8px rgba(0,0,0,0.6);
+  }
+  .navbtn{
+    flex:1; background:none; border:none; color:var(--text-faint);
+    display:flex; flex-direction:column; align-items:center; gap:4px;
+    padding: 10px 2px 9px; cursor:pointer; border-radius:16px;
+    transition: color .15s ease;
+  }
+  .navbtn svg{ width:20px; height:20px; }
+  .navbtn span{ font-size:9.5px; letter-spacing:0.2px; font-weight:600; }
+  .navbtn.active{ color: var(--gold-soft); }
+  .navbtn.active svg{ filter: drop-shadow(0 2px 8px rgba(212,175,106,0.35)); }
+
+  /* LEDGER */
+  .month-switch{
+    display:flex; align-items:center; justify-content:space-between;
+    padding: 14px 6px; margin-top:2px;
+  }
+  .switch-btn{
+    width:40px;height:40px;border-radius:12px; border:1px solid var(--border);
+    background: var(--surface); color:var(--text); display:flex;align-items:center;justify-content:center;
+    cursor:pointer;
+  }
+  .switch-btn svg{ width:18px;height:18px; }
+  .month-switch .mid{ text-align:center; }
+  .month-switch .mid .mname{ font-family: var(--font-display); font-size:19px; }
+  .month-switch .mid .mtag{ font-size:11px; color:var(--gold-soft); letter-spacing:0.5px; text-transform:uppercase; margin-top:2px;}
+
+  .bill-card{
+    display:flex; align-items:center; gap:12px;
+    padding: 14px 14px; margin-bottom:10px;
+  }
+  .bill-cat-dot{ width:9px; height:9px; border-radius:50%; flex:none; }
+  .bill-cat-dot.investment{ background: var(--gold); }
+  .bill-cat-dot.expense{ background: var(--blue); }
+  .bill-main{ flex:1; min-width:0; }
+  .bill-name{ font-weight:700; font-size:14.5px; margin:0; }
+  .bill-name.paid{ color: var(--green); }
+  .bill-name.pending{ color: var(--red); }
+  .bill-meta{ display:flex; gap:8px; align-items:center; margin-top:5px; flex-wrap:wrap; }
+  .bill-date{ font-size:11.5px; color:var(--text-dim); }
+  .bill-freq-tag{ font-size:9.5px; color:var(--text-faint); border:1px solid var(--border); padding:1px 6px; border-radius:999px; letter-spacing:0.3px; text-transform:uppercase;}
+
+  .toggle-btn{
+    flex:none; min-width:78px; min-height:44px;
+    border-radius: 14px; border:1px solid var(--border);
+    font-size:11.5px; font-weight:800; letter-spacing:0.5px; text-transform:uppercase;
+    display:flex; align-items:center; justify-content:center; gap:5px;
+    cursor:pointer; -webkit-tap-highlight-color: transparent;
+    transition: transform .08s ease, background .15s ease;
+  }
+  .toggle-btn:active{ transform: scale(0.94); }
+  .toggle-btn.is-paid{ background: var(--green-soft); color: var(--green); border-color: rgba(52,211,153,0.35); }
+  .toggle-btn.is-pending{ background: var(--red-soft); color: var(--red); border-color: rgba(251,114,104,0.3); }
+
+  .empty-state{ text-align:center; padding: 40px 20px; color:var(--text-dim); }
+  .empty-state svg{ width:38px;height:38px; opacity:0.5; margin-bottom:10px;}
+  .empty-state .et{ font-family:var(--font-display); font-size:16px; color:var(--text); margin-bottom:4px;}
+
+  /* YEAR DASHBOARD */
+  .year-switch{ display:flex; align-items:center; justify-content:center; gap:16px; padding: 12px 0 6px; }
+  .year-switch .yr{ font-family: var(--font-display); font-size:22px; min-width:70px; text-align:center; }
+  .year-grid{ display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-top:14px; }
+  .month-card{ padding:14px; cursor:pointer; transition: background .15s ease; }
+  .month-card:active{ background: var(--surface-2); }
+  .month-card .mc-top{ display:flex; justify-content:space-between; align-items:flex-start;}
+  .month-card .mc-name{ font-family:var(--font-display); font-size:15.5px; }
+  .month-card .mc-pct{ font-size:12px; font-weight:700; color: var(--gold-soft); }
+  .mc-bar{ height:5px; border-radius:999px; background: var(--border-soft); margin-top:10px; overflow:hidden; }
+  .mc-bar-fill{ height:100%; border-radius:999px; background: linear-gradient(90deg, var(--gold-dim), var(--gold-soft)); }
+  .mc-bottom{ display:flex; justify-content:space-between; margin-top:10px; font-size:10.5px; color:var(--text-dim); }
+  .mc-bottom b{ color:var(--text); }
+  .mc-current{ outline: 1px solid rgba(212,175,106,0.5); }
+
+  .year-totals{ display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-top:18px;}
+
+  .month-block{ margin-bottom:12px; overflow:hidden; }
+  .month-block > summary{
+    list-style:none; cursor:pointer; padding:15px 16px;
+    display:flex; align-items:center; justify-content:space-between; gap:12px;
+  }
+  .month-block > summary::-webkit-details-marker{ display:none; }
+  .month-block .mb-left{ display:flex; align-items:center; gap:12px; min-width:0; }
+  .month-block .mb-chevron{ width:18px;height:18px; color:var(--text-faint); flex:none; transition: transform .18s ease; }
+  .month-block[open] .mb-chevron{ transform: rotate(90deg); }
+  .month-block .mb-name{ font-family: var(--font-display); font-size:16px; }
+  .month-block .mb-name.is-current{ color: var(--gold-soft); }
+  .month-block .mb-sub{ font-size:11px; color:var(--text-dim); margin-top:2px; }
+  .month-block .mb-right{ display:flex; align-items:center; gap:10px; flex:none; }
+  .month-block .mb-pct{ font-size:13px; font-weight:700; color:var(--gold-soft); min-width:34px; text-align:right; }
+  .month-block .mb-bar{ width:44px; height:5px; border-radius:999px; background:var(--border-soft); overflow:hidden; }
+  .month-block .mb-bar-fill{ height:100%; background: linear-gradient(90deg, var(--gold-dim), var(--gold-soft)); }
+  .month-block .mb-body{ padding: 2px 12px 14px; }
+  .month-block .mb-empty{ padding: 4px 12px 16px; color:var(--text-faint); font-size:12.5px; }
+
+  /* SCHEDULE */
+  .search-wrap{ margin-top: 8px; position:relative; }
+  .search-input{
+    width:100%; padding: 13px 14px 13px 40px; border-radius: 14px;
+    border:1px solid var(--border); background: var(--surface); color:var(--text); font-size:14px;
+    outline:none;
+  }
+  .search-input::placeholder{ color: var(--text-faint); }
+  .search-wrap svg{ position:absolute; left:13px; top:50%; transform:translateY(-50%); width:16px;height:16px; color:var(--text-faint); }
+
+  .filter-row{ display:flex; gap:8px; overflow-x:auto; margin-top:12px; padding-bottom:4px; scrollbar-width:none; }
+  .filter-row::-webkit-scrollbar{ display:none; }
+  .filter-chip{
+    flex:none; padding: 8px 14px; border-radius:999px; border:1px solid var(--border);
+    background: var(--surface); color:var(--text-dim); font-size:12.5px; font-weight:600; cursor:pointer; white-space:nowrap;
+  }
+  .filter-chip.active{ background: var(--gold-dim); color:#1a1408; border-color: var(--gold-dim); }
+
+  .schedule-bill-card{ display:flex; align-items:center; gap:12px; padding:14px; margin-bottom:10px; }
+  .icon-btn{
+    width:36px;height:36px;border-radius:10px; border:1px solid var(--border); background: var(--surface-2);
+    display:flex;align-items:center;justify-content:center; color:var(--text-dim); cursor:pointer; flex:none;
+  }
+  .icon-btn svg{ width:15px;height:15px; }
+  .icon-btn.danger:active{ background: var(--red-soft); color:var(--red); }
+  .icon-btn.edit:active{ background: var(--gold-soft); color:#1a1408; }
+
+  .fab{
+    position:fixed; right: max(20px, calc(50% - 260px)); bottom: calc(94px + var(--safe-bottom));
+    width:56px;height:56px;border-radius:18px; z-index:41;
+    background: linear-gradient(150deg, var(--gold-soft), var(--gold-dim));
+    color:#1a1408; border:none; display:flex;align-items:center;justify-content:center;
+    box-shadow: 0 10px 26px -6px rgba(212,175,106,0.55);
+    cursor:pointer;
+  }
+  .fab svg{ width:24px;height:24px; }
+
+  /* SETTINGS */
+  .settings-item{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    padding: 16px; margin-bottom:10px;
+  }
+  .settings-item .st-left{ display:flex; align-items:center; gap:12px; }
+  .settings-item .st-ic{ width:36px;height:36px;border-radius:10px; background:var(--surface-2); display:flex;align-items:center;justify-content:center; color:var(--gold-soft); flex:none;}
+  .settings-item .st-ic svg{ width:17px;height:17px; }
+  .settings-item .st-title{ font-weight:600; font-size:14px; }
+  .settings-item .st-sub{ font-size:11.5px; color:var(--text-dim); margin-top:2px; }
+  .settings-btn{
+    padding: 9px 14px; border-radius:11px; border:1px solid var(--border); background: var(--surface-2); color:var(--text);
+    font-size:12.5px; font-weight:600; cursor:pointer;
+  }
+  .settings-btn.danger{ color: var(--red); border-color: rgba(251,114,104,0.3); }
+  .settings-btn.primary{ background: var(--gold-dim); color:#1a1408; border:none; }
+
+  /* MODAL */
+  .modal-backdrop{
+    position:fixed; inset:0; background: rgba(4,6,11,0.7); backdrop-filter: blur(3px);
+    z-index:60; display:flex; align-items:flex-end; justify-content:center;
+    opacity:0; pointer-events:none; transition: opacity .18s ease;
+  }
+  .modal-backdrop.open{ opacity:1; pointer-events:auto; }
+  .modal-sheet{
+    width:100%; max-width:560px; background: var(--bg-elevated); border:1px solid var(--border);
+    border-radius: 24px 24px 0 0; padding: 10px 20px calc(24px + var(--safe-bottom));
+    max-height: 88vh; overflow-y:auto;
+    transform: translateY(30px); transition: transform .2s ease;
+  }
+  .modal-backdrop.open .modal-sheet{ transform: translateY(0); }
+  .modal-handle{ width:38px;height:4px;border-radius:99px; background: var(--border); margin: 8px auto 14px; }
+  .modal-title{ font-family: var(--font-display); font-size:19px; margin-bottom:16px; }
+  .field{ margin-bottom:14px; }
+  .field label{ display:block; font-size:11.5px; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.4px; margin-bottom:6px; font-weight:700;}
+  .field input[type=text], .field input[type=number], .field select{
+    width:100%; padding:12px 13px; border-radius:12px; border:1px solid var(--border);
+    background: var(--surface); color:var(--text); font-size:14.5px; outline:none;
+  }
+  .seg{ display:flex; gap:8px; }
+  .seg button{
+    flex:1; padding:11px; border-radius:12px; border:1px solid var(--border); background:var(--surface);
+    color:var(--text-dim); font-weight:700; font-size:13px; cursor:pointer;
+  }
+  .seg button.active{ background: var(--gold-dim); color:#1a1408; border-color:var(--gold-dim); }
+  .modal-actions{ display:flex; gap:10px; margin-top:8px; }
+  .modal-actions button{ flex:1; padding:14px; border-radius:14px; font-weight:700; font-size:14px; cursor:pointer; border:none;}
+  .btn-cancel{ background: var(--surface-2); color: var(--text); border:1px solid var(--border) !important; }
+  .btn-save{ background: linear-gradient(150deg, var(--gold-soft), var(--gold-dim)); color:#1a1408; }
+
+  /* TOAST */
+  .toast{
+    position:fixed; left:50%; bottom: calc(100px + var(--safe-bottom)); transform: translateX(-50%) translateY(20px);
+    background: var(--surface-2); border:1px solid var(--border); color:var(--text);
+    padding: 12px 18px; border-radius: 12px; font-size:13px; z-index:70;
+    opacity:0; pointer-events:none; transition: all .22s ease; box-shadow: var(--shadow-card);
+    display:flex; align-items:center; gap:8px;
+  }
+  .toast.show{ opacity:1; transform: translateX(-50%) translateY(0); }
+  .toast .tdot{ width:8px;height:8px;border-radius:50%; background:var(--green); flex:none;}
+
+  h1,h2,h3,h4,p{ margin:0; }
+  .fade-in{ animation: fadeIn .25s ease; }
+  @keyframes fadeIn{ from{ opacity:0; transform: translateY(6px);} to{opacity:1; transform:translateY(0);} }
+
+  @media (min-width:601px){
+    #app{ padding-top:6px; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="topbar" id="topbar"></div>
+  <main id="view-container"></main>
+</div>
+
+<button class="fab" id="fabAdd" style="display:none;" aria-label="Add bill">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+</button>
+
+<nav class="navbar">
+  <div class="navbar-inner" id="navbarInner"></div>
+</nav>
+
+<div class="modal-backdrop" id="modalBackdrop">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div id="modalContent"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"><span class="tdot"></span><span id="toastMsg"></span></div>
+
+<script>
+(function(){
+"use strict";
+
+/* ---------------- ICONS ---------------- */
+const ICONS = {
+  dashboard: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>`,
+  ledger: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>`,
+  year: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="17" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/></svg>`,
+  schedule: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>`,
+  settings: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9c.14.36.4.66.73.86.32.2.7.31 1.09.31H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>`,
+  chevLeft: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>`,
+  chevRight: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>`,
+  invest: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>`,
+  expense: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 9V7a4 4 0 0 0-8 0v2"/><rect x="4" y="9" width="16" height="12" rx="2"/></svg>`,
+  search: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>`,
+  edit: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>`,
+  trash: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>`,
+  bell: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>`,
+  reset: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>`,
+  download: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>`,
+  upload: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>`,
+  check: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`,
+  x: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`,
+  inbox: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>`,
+  info: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>`
+};
+
+const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+const MONTHS_SHORT = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
+/* ---------------- DEFAULT DATA ---------------- */
+function defaultBills(){
+  return [
+    { id:"mutual-fund", name:"Mutual Fund", category:"investment", frequency:"monthly", dueDay:2 },
+    { id:"lic", name:"LIC", category:"investment", frequency:"yearly", dueDay:1, dueMonth:4 },
+    { id:"post-office-ssa", name:"Post Office SSA", category:"investment", frequency:"yearly", dueDay:1, dueMonth:5 },
+    { id:"star-health", name:"Star Health", category:"investment", frequency:"yearly", dueDay:1, dueMonth:10 },
+    { id:"yagnya-maintenance", name:"Yagnya Maintenance", category:"expense", frequency:"monthly", dueDay:1 },
+    { id:"car-loan", name:"Car Loan", category:"expense", frequency:"monthly", dueDay:1 },
+    { id:"credit-card", name:"Credit Card", category:"expense", frequency:"monthly", dueDay:16 },
+    { id:"wifi-bill", name:"Wifi Bill", category:"expense", frequency:"monthly", dueDay:15 },
+    { id:"alcazar-insurance", name:"Alcazar Insurance", category:"expense", frequency:"yearly", dueDay:1, dueMonth:5 }
+  ];
+}
+
+/* ---------------- STORAGE ---------------- */
+const BILLS_KEY = "hariBillTracker_bills_v1";
+const PAY_KEY = "hariBillTracker_payments_v1";
+
+function loadBills(){
+  try{
+    const raw = localStorage.getItem(BILLS_KEY);
+    if(!raw){ const d = defaultBills(); localStorage.setItem(BILLS_KEY, JSON.stringify(d)); return d; }
+    return JSON.parse(raw);
+  }catch(e){ return defaultBills(); }
+}
+function saveBills(bills){ localStorage.setItem(BILLS_KEY, JSON.stringify(bills)); }
+
+function loadPayments(){
+  try{
+    const raw = localStorage.getItem(PAY_KEY);
+    return raw ? JSON.parse(raw) : {};
+  }catch(e){ return {}; }
+}
+function savePayments(p){ localStorage.setItem(PAY_KEY, JSON.stringify(p)); }
+
+function payKey(billId, year, month){ return billId+"|"+year+"|"+month; }
+function isPaid(billId, year, month){ return !!state.payments[payKey(billId,year,month)]; }
+function setPaid(billId, year, month, val){
+  const k = payKey(billId,year,month);
+  if(val) state.payments[k] = true; else delete state.payments[k];
+  savePayments(state.payments);
+}
+
+/* ---------------- STATE ---------------- */
+const today = new Date();
+const state = {
+  view: "dashboard",
+  bills: loadBills(),
+  payments: loadPayments(),
+  ledgerYear: today.getFullYear(),
+  ledgerMonth: today.getMonth()+1,
+  yearDashYear: today.getFullYear(),
+  scheduleSearch: "",
+  scheduleFilter: "all",
+  editingBillId: null
+};
+
+/* ---------------- DATE / OCCURRENCE HELPERS ---------------- */
+function isToday(y,m,d){
+  return y===today.getFullYear() && m===(today.getMonth()+1) && d===today.getDate();
+}
+function occDate(y,m,d){ return new Date(y, m-1, d, 0,0,0,0); }
+function startOfToday(){ return new Date(today.getFullYear(), today.getMonth(), today.getDate()); }
+
+function occurrencesForMonth(year, month){
+  const list = [];
+  state.bills.forEach(b=>{
+    if(b.frequency === "monthly"){
+      list.push({ bill:b, year, month, day:b.dueDay });
+    } else if(b.frequency === "yearly" && b.dueMonth === month){
+      list.push({ bill:b, year, month, day:b.dueDay });
+    }
+  });
+  list.sort((a,b)=> a.day - b.day);
+  return list;
+}
+
+function occStatus(o){
+  const paid = isPaid(o.bill.id, o.year, o.month);
+  if(paid) return "paid";
+  const d = occDate(o.year, o.month, o.day);
+  const t = startOfToday();
+  if(d.getTime() < t.getTime()) return "overdue";
+  if(d.getTime() === t.getTime()) return "due-today";
+  return "upcoming";
+}
+
+function statusLabel(s){
+  return { paid:"Paid", pending:"Pending", overdue:"Overdue", "due-today":"Due Today", upcoming:"Upcoming" }[s] || s;
+}
+
+/* find next unpaid occurrence from today onward (search current + following months) */
+function findUpcomingBill(){
+  let y = today.getFullYear(), m = today.getMonth()+1;
+  for(let i=0;i<15;i++){
+    const occs = occurrencesForMonth(y,m).filter(o=>{
+      if(y===today.getFullYear() && m===(today.getMonth()+1)){
+        return !isPaid(o.bill.id,o.year,o.month); // include overdue-this-month too
+      }
+      return !isPaid(o.bill.id,o.year,o.month);
+    });
+    // within current month, only keep those not already past far... but overdue should still show if unpaid
+    if(occs.length){
+      occs.sort((a,b)=> a.day-b.day);
+      // if it's current month, prefer ones from today's day or overdue first by earliest
+      return occs[0];
+    }
+    m++; if(m>12){m=1; y++;}
+  }
+  return null;
+}
+
+/* ---------------- RENDER HELPERS ---------------- */
+function pctOf(paid,total){ return total===0 ? 0 : Math.round((paid/total)*100); }
+
+function ringSvg(pct, size){
+  size = size || 96;
+  const r = (size/2) - 8;
+  const c = 2*Math.PI*r;
+  const off = c - (pct/100)*c;
+  return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+    <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="#232D46" stroke-width="8"/>
+    <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="url(#gradGold)" stroke-width="8"
+      stroke-linecap="round" stroke-dasharray="${c}" stroke-dashoffset="${off}"
+      transform="rotate(-90 ${size/2} ${size/2})"/>
+    <defs><linearGradient id="gradGold" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#E8CB93"/><stop offset="100%" stop-color="#D4AF6A"/>
+    </linearGradient></defs>
+  </svg>`;
+}
+
+function toast(msg){
+  const t = document.getElementById("toast");
+  document.getElementById("toastMsg").textContent = msg;
+  t.classList.add("show");
+  clearTimeout(toast._t);
+  toast._t = setTimeout(()=> t.classList.remove("show"), 1800);
+}
+
+/* ---------------- VIEW: DASHBOARD ---------------- */
+function renderDashboard(){
+  const y = today.getFullYear(), m = today.getMonth()+1;
+  const occs = occurrencesForMonth(y,m);
+  const invest = occs.filter(o=>o.bill.category==="investment");
+  const expense = occs.filter(o=>o.bill.category==="expense");
+  const paidCount = occs.filter(o=>isPaid(o.bill.id,o.year,o.month)).length;
+  const pendingCount = occs.length - paidCount;
+  const pct = pctOf(paidCount, occs.length);
+  const investPaid = invest.filter(o=>isPaid(o.bill.id,o.year,o.month)).length;
+  const expensePaid = expense.filter(o=>isPaid(o.bill.id,o.year,o.month)).length;
+  const upcoming = findUpcomingBill();
+
+  let upcomingHtml;
+  if(upcoming){
+    const st = occStatus(upcoming);
+    const dotColor = st==="overdue" ? "var(--red)" : st==="due-today" ? "var(--amber)" : "var(--blue)";
+    upcomingHtml = `
+      <div class="card upcoming-card">
+        <span class="updot" style="background:${dotColor}"></span>
+        <div class="upinfo">
+          <div class="upname">${escapeHtml(upcoming.bill.name)}</div>
+          <div class="update">${MONTHS[upcoming.month-1]} ${upcoming.day}, ${upcoming.year} &middot; ${upcoming.bill.category==="investment"?"Investment":"Expense"}</div>
+        </div>
+        <span class="status-pill ${st}">${statusLabel(st)}</span>
+      </div>`;
+  } else {
+    upcomingHtml = `<div class="card upcoming-empty">All bills paid. Nothing upcoming. 🎉</div>`;
+  }
+
+  return `
+    <div class="fade-in">
+      <div class="card hero-card">
+        <div class="hero-top">
+          <div>
+            <div class="hero-label">Current Month</div>
+            <div class="hero-month">${MONTHS[m-1]} ${y}</div>
+          </div>
+          <div class="ring-wrap">
+            ${ringSvg(pct,96)}
+            <div class="ring-pct"><b>${pct}%</b><span>Paid</span></div>
+          </div>
+        </div>
+        <div class="hero-stats">
+          <div class="hstat"><b>${occs.length}</b><span>Total Bills</span></div>
+          <div class="hstat paid"><b>${paidCount}</b><span>Paid</span></div>
+          <div class="hstat pending"><b>${pendingCount}</b><span>Pending</span></div>
+        </div>
+      </div>
+
+      <div class="section-label"><h3>Overview</h3><small>${MONTHS_SHORT[m-1]} ${y}</small></div>
+      <div class="split-row">
+        <div class="card mini-card invest">
+          <div class="icon-badge">${ICONS.invest}</div>
+          <h4>Investment</h4>
+          <div class="big">${invest.length} bill${invest.length===1?"":"s"}</div>
+          <div class="rowline"><span>Paid</span><b>${investPaid}/${invest.length}</b></div>
+        </div>
+        <div class="card mini-card expense">
+          <div class="icon-badge">${ICONS.expense}</div>
+          <h4>Expense</h4>
+          <div class="big">${expense.length} bill${expense.length===1?"":"s"}</div>
+          <div class="rowline"><span>Paid</span><b>${expensePaid}/${expense.length}</b></div>
+        </div>
+      </div>
+
+      <div class="section-label"><h3>Upcoming Bill</h3></div>
+      ${upcomingHtml}
+    </div>
+  `;
+}
+
+/* ---------------- SHARED: BILL OCCURRENCE ROW ---------------- */
+function renderBillOccurrenceRow(o){
+  const paid = isPaid(o.bill.id,o.year,o.month);
+  const st = occStatus(o);
+  return `
+    <div class="card bill-card">
+      <span class="bill-cat-dot ${o.bill.category}"></span>
+      <div class="bill-main">
+        <p class="bill-name ${paid?'paid':'pending'}">${escapeHtml(o.bill.name)}</p>
+        <div class="bill-meta">
+          <span class="bill-date">Due ${MONTHS[o.month-1]} ${o.day}</span>
+          <span class="bill-freq-tag">${o.bill.frequency}</span>
+          <span class="status-pill ${st}">${statusLabel(st)}</span>
+        </div>
+      </div>
+      <button class="toggle-btn ${paid?'is-paid':'is-pending'}" data-action="toggle-pay" data-id="${o.bill.id}" data-y="${o.year}" data-m="${o.month}">
+        ${paid?ICONS.check:''} ${paid?'PAID':'PENDING'}
+      </button>
+    </div>`;
+}
+
+/* ---------------- VIEW: MONTHLY LEDGER ---------------- */
+function renderLedger(){
+  const y = state.ledgerYear, m = state.ledgerMonth;
+  const occs = occurrencesForMonth(y,m);
+  const isCurrent = (y===today.getFullYear() && m===(today.getMonth()+1));
+
+  const rows = occs.map(renderBillOccurrenceRow).join("");
+
+  return `
+    <div class="fade-in">
+      <div class="month-switch">
+        <button class="switch-btn" data-action="ledger-prev">${ICONS.chevLeft}</button>
+        <div class="mid">
+          <div class="mname">${MONTHS[m-1]} ${y}</div>
+          <div class="mtag">${isCurrent?"Current Month":"&nbsp;"}</div>
+        </div>
+        <button class="switch-btn" data-action="ledger-next">${ICONS.chevRight}</button>
+      </div>
+      ${occs.length ? rows : emptyState("No bills this month","Nothing scheduled for "+MONTHS[m-1]+".")}
+    </div>
+  `;
+}
+
+/* ---------------- VIEW: YEAR DASHBOARD ---------------- */
+function renderYearDashboard(){
+  const y = state.yearDashYear;
+  let totalOccs=0, totalPaid=0;
+  const currentMonthReal = (y===today.getFullYear()) ? (today.getMonth()+1) : -1;
+
+  const monthBlocks = MONTHS.map((name,idx)=>{
+    const month = idx+1;
+    const occs = occurrencesForMonth(y,month);
+    const paid = occs.filter(o=>isPaid(o.bill.id,y,month)).length;
+    const pct = pctOf(paid, occs.length);
+    totalOccs += occs.length; totalPaid += paid;
+    const isCurrent = (month===currentMonthReal);
+    const rows = occs.length
+      ? occs.map(renderBillOccurrenceRow).join("")
+      : `<div class="mb-empty">No bills scheduled in ${name}.</div>`;
+
+    return `
+      <details class="card month-block" ${isCurrent?'open':''}>
+        <summary>
+          <div class="mb-left">
+            <svg class="mb-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+            <div>
+              <div class="mb-name ${isCurrent?'is-current':''}">${name}${isCurrent?' &middot; Now':''}</div>
+              <div class="mb-sub">${paid} of ${occs.length} paid</div>
+            </div>
+          </div>
+          <div class="mb-right">
+            <span class="mb-pct">${occs.length ? pct+'%' : '—'}</span>
+            <span class="mb-bar"><span class="mb-bar-fill" style="width:${pct}%"></span></span>
+          </div>
+        </summary>
+        <div class="mb-body">${rows}</div>
+      </details>`;
+  }).join("");
+
+  const overallPct = pctOf(totalPaid,totalOccs);
+
+  return `
+    <div class="fade-in">
+      <div class="year-switch">
+        <button class="switch-btn" data-action="year-prev">${ICONS.chevLeft}</button>
+        <span class="yr">${y}</span>
+        <button class="switch-btn" data-action="year-next">${ICONS.chevRight}</button>
+      </div>
+
+      <div class="card hero-card" style="padding:18px 20px;">
+        <div class="hero-top">
+          <div>
+            <div class="hero-label">Year Overview</div>
+            <div class="hero-month">${totalPaid}/${totalOccs} paid</div>
+          </div>
+          <div class="ring-wrap" style="width:72px;height:72px;">
+            ${ringSvg(overallPct,72)}
+            <div class="ring-pct"><b style="font-size:16px;">${overallPct}%</b></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-label"><h3>Months</h3><small>Tap a month to expand</small></div>
+      ${monthBlocks}
+    </div>
+  `;
+}
+
+/* ---------------- VIEW: BILL SCHEDULE ---------------- */
+function billMatchesFilter(b){
+  const f = state.scheduleFilter;
+  if(f==="all") return true;
+  if(f==="investment") return b.category==="investment";
+  if(f==="expense") return b.category==="expense";
+  if(f==="monthly") return b.frequency==="monthly";
+  if(f==="yearly") return b.frequency==="yearly";
+  if(f==="paid" || f==="pending"){
+    // relative to current viewed ledger month/year context -> use current real month
+    const y = today.getFullYear(), m = today.getMonth()+1;
+    const applies = (b.frequency==="monthly") || (b.frequency==="yearly" && b.dueMonth===m);
+    if(!applies) return false;
+    const paid = isPaid(b.id,y,m);
+    return f==="paid" ? paid : !paid;
+  }
+  return true;
+}
+
+function renderScheduleBillCard(b){
+  return `
+    <div class="card schedule-bill-card">
+      <span class="bill-cat-dot ${b.category}"></span>
+      <div class="bill-main">
+        <p class="bill-name" style="color:var(--text)">${escapeHtml(b.name)}</p>
+        <div class="bill-meta">
+          <span class="bill-freq-tag">${b.category}</span>
+          <span class="bill-date">${b.frequency==="monthly" ? "Day "+b.dueDay+" every month" : MONTHS[b.dueMonth-1]+" "+b.dueDay}</span>
+        </div>
+      </div>
+      <button class="icon-btn edit" data-action="edit-bill" data-id="${b.id}">${ICONS.edit}</button>
+      <button class="icon-btn danger" data-action="delete-bill" data-id="${b.id}">${ICONS.trash}</button>
+    </div>`;
+}
+
+function renderSchedule(){
+  const q = state.scheduleSearch.trim().toLowerCase();
+  const filtered = state.bills.filter(b=> billMatchesFilter(b) && (!q || b.name.toLowerCase().includes(q)) );
+  const monthly = filtered.filter(b=>b.frequency==="monthly");
+  const yearly = filtered.filter(b=>b.frequency==="yearly");
+
+  const chips = [
+    ["all","All"],["investment","Investment"],["expense","Expense"],
+    ["paid","Paid"],["pending","Pending"],["monthly","Monthly"],["yearly","Yearly"]
+  ].map(([key,label])=>`<button class="filter-chip ${state.scheduleFilter===key?'active':''}" data-action="set-filter" data-filter="${key}">${label}</button>`).join("");
+
+  return `
+    <div class="fade-in">
+      <div class="search-wrap">
+        ${ICONS.search}
+        <input class="search-input" id="scheduleSearchInput" type="text" placeholder="Search bills..." value="${escapeHtml(state.scheduleSearch)}">
+      </div>
+      <div class="filter-row">${chips}</div>
+
+      <div class="section-label"><h3>Monthly Bills</h3><small>${monthly.length} total</small></div>
+      ${monthly.length ? monthly.map(renderScheduleBillCard).join("") : emptyState("No monthly bills","Try a different search or filter.")}
+
+      <div class="section-label"><h3>Yearly Bills</h3><small>${yearly.length} total</small></div>
+      ${yearly.length ? yearly.map(renderScheduleBillCard).join("") : emptyState("No yearly bills","Try a different search or filter.")}
+    </div>
+  `;
+}
+
+/* ---------------- VIEW: SETTINGS ---------------- */
+function renderSettings(){
+  return `
+    <div class="fade-in">
+      <div class="section-label"><h3>Data</h3></div>
+      <div class="card settings-item">
+        <div class="st-left">
+          <div class="st-ic">${ICONS.reset}</div>
+          <div>
+            <div class="st-title">Reset all payment statuses</div>
+            <div class="st-sub">Marks every bill occurrence as pending</div>
+          </div>
+        </div>
+        <button class="settings-btn danger" data-action="reset-payments">Reset</button>
+      </div>
+      <div class="card settings-item">
+        <div class="st-left">
+          <div class="st-ic">${ICONS.download}</div>
+          <div>
+            <div class="st-title">Export data</div>
+            <div class="st-sub">Save bills &amp; statuses as JSON</div>
+          </div>
+        </div>
+        <button class="settings-btn" data-action="export-data">Export</button>
+      </div>
+      <div class="card settings-item">
+        <div class="st-left">
+          <div class="st-ic">${ICONS.upload}</div>
+          <div>
+            <div class="st-title">Import data</div>
+            <div class="st-sub">Restore from a JSON backup</div>
+          </div>
+        </div>
+        <label class="settings-btn primary" style="cursor:pointer;">
+          Import<input type="file" id="importFile" accept="application/json" style="display:none;">
+        </label>
+      </div>
+
+      <div class="section-label"><h3>About</h3></div>
+      <div class="card settings-item">
+        <div class="st-left">
+          <div class="st-ic">${ICONS.info}</div>
+          <div>
+            <div class="st-title">Hari's Bill Tracker</div>
+            <div class="st-sub">All data is stored locally on this device</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function emptyState(title, sub){
+  return `<div class="card empty-state">${ICONS.inbox}<div class="et">${title}</div><div>${sub}</div></div>`;
+}
+
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+
+/* ---------------- HEADER ---------------- */
+function renderTopbar(){
+  const titles = {
+    dashboard: ["Dashboard","Your bills at a glance"],
+    ledger: ["Monthly Ledger","One month, every bill"],
+    year: ["Year Dashboard","The full picture"],
+    schedule: ["Bill Schedule","Manage your bills"],
+    settings: ["Settings","Data & preferences"]
+  };
+  const [t,c] = titles[state.view];
+  return `
+    <div class="brand">
+      <div class="brand-title"><span class="mark">H</span> Hari's Bills</div>
+    </div>
+    <h1 class="view-title">${t}</h1>
+    <div class="view-caption">${c}</div>
+  `;
+}
+
+/* ---------------- NAV ---------------- */
+function renderNav(){
+  const items = [
+    ["dashboard","Dashboard",ICONS.dashboard],
+    ["ledger","Ledger",ICONS.ledger],
+    ["year","Year",ICONS.year],
+    ["schedule","Schedule",ICONS.schedule],
+    ["settings","Settings",ICONS.settings]
+  ];
+  return items.map(([key,label,icon])=>`
+    <button class="navbtn ${state.view===key?'active':''}" data-action="nav" data-view="${key}">
+      ${icon}<span>${label}</span>
+    </button>`).join("");
+}
+
+/* ---------------- MASTER RENDER ---------------- */
+function render(){
+  document.getElementById("topbar").innerHTML = renderTopbar();
+  const container = document.getElementById("view-container");
+  if(state.view==="dashboard") container.innerHTML = renderDashboard();
+  else if(state.view==="ledger") container.innerHTML = renderLedger();
+  else if(state.view==="year") container.innerHTML = renderYearDashboard();
+  else if(state.view==="schedule") container.innerHTML = renderSchedule();
+  else if(state.view==="settings") container.innerHTML = renderSettings();
+
+  document.getElementById("navbarInner").innerHTML = renderNav();
+  document.getElementById("fabAdd").style.display = (state.view==="schedule") ? "flex" : "none";
+
+  bindDynamicEvents();
+}
+
+/* ---------------- MODAL: ADD/EDIT BILL ---------------- */
+function openBillModal(billId){
+  state.editingBillId = billId || null;
+  const editing = billId ? state.bills.find(b=>b.id===billId) : null;
+  const backdrop = document.getElementById("modalBackdrop");
+  const content = document.getElementById("modalContent");
+
+  const category = editing ? editing.category : "investment";
+  const frequency = editing ? editing.frequency : "monthly";
+  const dueDay = editing ? editing.dueDay : 1;
+  const dueMonth = editing ? (editing.dueMonth||1) : 1;
+
+  content.innerHTML = `
+    <div class="modal-title">${editing? "Edit Bill" : "Add Bill"}</div>
+    <div class="field">
+      <label>Bill Name</label>
+      <input type="text" id="fName" value="${editing?escapeHtml(editing.name):""}" placeholder="e.g. Electricity Bill">
+    </div>
+    <div class="field">
+      <label>Category</label>
+      <div class="seg" id="segCategory">
+        <button type="button" data-val="investment" class="${category==='investment'?'active':''}">Investment</button>
+        <button type="button" data-val="expense" class="${category==='expense'?'active':''}">Expense</button>
+      </div>
+    </div>
+    <div class="field">
+      <label>Frequency</label>
+      <div class="seg" id="segFrequency">
+        <button type="button" data-val="monthly" class="${frequency==='monthly'?'active':''}">Monthly</button>
+        <button type="button" data-val="yearly" class="${frequency==='yearly'?'active':''}">Yearly</button>
+      </div>
+    </div>
+    <div class="field">
+      <label>Due Day (1–31)</label>
+      <input type="number" id="fDay" min="1" max="31" value="${dueDay}">
+    </div>
+    <div class="field" id="monthField" style="${frequency==='yearly'?'':'display:none;'}">
+      <label>Due Month</label>
+      <select id="fMonth">
+        ${MONTHS.map((mn,i)=>`<option value="${i+1}" ${dueMonth===(i+1)?'selected':''}>${mn}</option>`).join("")}
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" data-action="close-modal">Cancel</button>
+      <button class="btn-save" data-action="save-bill">${editing?"Save Changes":"Add Bill"}</button>
+    </div>
+    ${editing?`<div class="modal-actions" style="margin-top:8px;"><button class="settings-btn danger" style="width:100%;" data-action="delete-bill-modal" data-id="${editing.id}">Delete this bill</button></div>`:""}
+  `;
+
+  backdrop.classList.add("open");
+
+  content.querySelector("#segCategory").addEventListener("click", e=>{
+    const btn = e.target.closest("button"); if(!btn) return;
+    content.querySelectorAll("#segCategory button").forEach(b=>b.classList.remove("active"));
+    btn.classList.add("active");
+  });
+  content.querySelector("#segFrequency").addEventListener("click", e=>{
+    const btn = e.target.closest("button"); if(!btn) return;
+    content.querySelectorAll("#segFrequency button").forEach(b=>b.classList.remove("active"));
+    btn.classList.add("active");
+    document.getElementById("monthField").style.display = (btn.dataset.val==="yearly") ? "" : "none";
+  });
+}
+
+function closeModal(){
+  document.getElementById("modalBackdrop").classList.remove("open");
+  state.editingBillId = null;
+}
+
+function saveBillFromModal(){
+  const name = document.getElementById("fName").value.trim();
+  if(!name){ toast("Please enter a bill name"); return; }
+  const category = document.querySelector("#segCategory button.active").dataset.val;
+  const frequency = document.querySelector("#segFrequency button.active").dataset.val;
+  let day = parseInt(document.getElementById("fDay").value,10);
+  if(isNaN(day) || day<1) day=1; if(day>31) day=31;
+  const month = frequency==="yearly" ? parseInt(document.getElementById("fMonth").value,10) : undefined;
+
+  if(state.editingBillId){
+    const b = state.bills.find(x=>x.id===state.editingBillId);
+    b.name=name; b.category=category; b.frequency=frequency; b.dueDay=day;
+    if(frequency==="yearly") b.dueMonth=month; else delete b.dueMonth;
+    toast("Bill updated");
+  } else {
+    const id = name.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"") + "-" + Date.now().toString(36).slice(-4);
+    const nb = { id, name, category, frequency, dueDay: day };
+    if(frequency==="yearly") nb.dueMonth = month;
+    state.bills.push(nb);
+    toast("Bill added");
+  }
+  saveBills(state.bills);
+  closeModal();
+  render();
+}
+
+function deleteBill(id){
+  state.bills = state.bills.filter(b=>b.id!==id);
+  saveBills(state.bills);
+  // clean payments for this bill
+  Object.keys(state.payments).forEach(k=>{ if(k.startsWith(id+"|")) delete state.payments[k]; });
+  savePayments(state.payments);
+  toast("Bill deleted");
+}
+
+/* ---------------- EVENT BINDING ---------------- */
+function bindDynamicEvents(){
+  const searchInput = document.getElementById("scheduleSearchInput");
+  if(searchInput){
+    searchInput.addEventListener("input", e=>{
+      state.scheduleSearch = e.target.value;
+      const container = document.getElementById("view-container");
+      container.innerHTML = renderSchedule();
+      bindDynamicEvents();
+      const el = document.getElementById("scheduleSearchInput");
+      if(el){ el.focus(); el.selectionStart = el.selectionEnd = el.value.length; }
+    });
+  }
+  const importFile = document.getElementById("importFile");
+  if(importFile){
+    importFile.addEventListener("change", e=>{
+      const file = e.target.files[0];
+      if(!file) return;
+      const reader = new FileReader();
+      reader.onload = evt=>{
+        try{
+          const data = JSON.parse(evt.target.result);
+          if(data.bills) { state.bills = data.bills; saveBills(state.bills); }
+          if(data.payments) { state.payments = data.payments; savePayments(state.payments); }
+          toast("Data imported");
+          render();
+        }catch(err){ toast("Invalid file"); }
+      };
+      reader.readAsText(file);
+    });
+  }
+}
+
+/* ---------------- GLOBAL CLICK HANDLER ---------------- */
+document.addEventListener("click", function(e){
+  const t = e.target.closest("[data-action]");
+  if(!t) return;
+  const action = t.dataset.action;
+
+  if(action==="nav"){ state.view = t.dataset.view; render(); return; }
+
+  if(action==="toggle-pay"){
+    const id=t.dataset.id, y=parseInt(t.dataset.y,10), m=parseInt(t.dataset.m,10);
+    const cur = isPaid(id,y,m);
+    setPaid(id,y,m,!cur);
+    toast(!cur ? "Marked as paid" : "Marked as pending");
+    render();
+    return;
+  }
+
+  if(action==="ledger-prev"){
+    state.ledgerMonth--; if(state.ledgerMonth<1){ state.ledgerMonth=12; state.ledgerYear--; }
+    render(); return;
+  }
+  if(action==="ledger-next"){
+    state.ledgerMonth++; if(state.ledgerMonth>12){ state.ledgerMonth=1; state.ledgerYear++; }
+    render(); return;
+  }
+  if(action==="year-prev"){ state.yearDashYear--; render(); return; }
+  if(action==="year-next"){ state.yearDashYear++; render(); return; }
+  if(action==="goto-month"){
+    state.ledgerYear = parseInt(t.dataset.y,10);
+    state.ledgerMonth = parseInt(t.dataset.m,10);
+    state.view = "ledger";
+    render(); return;
+  }
+
+  if(action==="set-filter"){ state.scheduleFilter = t.dataset.filter; render(); return; }
+
+  if(action==="edit-bill"){ openBillModal(t.dataset.id); return; }
+  if(action==="delete-bill"){
+    if(confirm("Delete this bill? This removes its history too.")){ deleteBill(t.dataset.id); render(); }
+    return;
+  }
+  if(action==="delete-bill-modal"){
+    if(confirm("Delete this bill? This removes its history too.")){ deleteBill(t.dataset.id); closeModal(); render(); }
+    return;
+  }
+  if(action==="save-bill"){ saveBillFromModal(); return; }
+  if(action==="close-modal"){ closeModal(); return; }
+
+  if(action==="reset-payments"){
+    if(confirm("Reset ALL payment statuses to pending? This cannot be undone.")){
+      state.payments = {}; savePayments(state.payments); toast("All statuses reset"); render();
+    }
+    return;
+  }
+  if(action==="export-data"){
+    const data = { bills: state.bills, payments: state.payments, exportedAt: new Date().toISOString() };
+    const blob = new Blob([JSON.stringify(data,null,2)], {type:"application/json"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "hari-bill-tracker-backup.json";
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast("Data exported");
+    return;
+  }
+
+  // clicking backdrop closes modal
+  if(t.id === "modalBackdrop"){ closeModal(); return; }
+});
+
+document.getElementById("modalBackdrop").addEventListener("click", function(e){
+  if(e.target === this) closeModal();
+});
+document.getElementById("fabAdd").addEventListener("click", ()=> openBillModal(null));
+
+/* ---------------- INIT ---------------- */
+render();
+
+})();
+</script>
+
+<!-- PWA: register service worker for offline support -->
+<script>
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", function () {
+      navigator.serviceWorker.register("service-worker.js").catch(function (err) {
+        console.warn("Service worker registration failed:", err);
+      });
+    });
+  }
+</script>
+</body>
+</html>
